@@ -1,0 +1,53 @@
+# Ignore build files
+/build/
+/Debug/
+/Release/
+/external/
+/bin/
+/obj/
+
+# Ignore Visual Studio files
+.vscode/
+*.code-workspace
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore dependency directories
+/node_modules/
+/vendor/
+
+# Ignore compiled dynamic libraries
+*.dll
+*.so
+*.dylib
+
+# Ignore compiled static libraries
+*.lib
+*.a
+
+# Ignore compiled object files
+*.o
+*.obj
+
+# Ignore executable files
+*.exe
+*.out
+*.app
+
+# Ignore logs and databases
+*.log
+*.sql
+*.sqlite
+
+# Ignore CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
