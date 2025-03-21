@@ -1,33 +1,31 @@
 #include "config.hpp"
 
 #include <iostream>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
+
 
 #include "renderPipeline.hpp"
 
 // Renderer registry: map string to corresponding function
 std::unordered_map<std::string, RenderFunction> plots = {
-    {"spectrum", spectrum},
-    {"grayscale", grayscale},
-    {"rt1", rt1}
-};
+    {"spectrum", spectrum}, {"grayscale", grayscale}, {"rt1", rt1}};
 
-//Raytracer
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <renderer>\n";
-        return 1;
-    }
+// Raytracer
+int main(int argc, char *argv[]) {
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <renderer>\n";
+    return 1;
+  }
 
-    std::string mode = argv[1];
+  std::string mode = argv[1];
 
-    if (plots.find(mode) != plots.end()) {
-        runRenderer(plots[mode]);
-    } else {
-        std::cerr << "Unknown renderer: " << mode << "\n";
-        return 1;
-    }
+  if (plots.find(mode) != plots.end()) {
+    runRenderer(plots[mode]);
+  } else {
+    std::cerr << "Unknown renderer: " << mode << "\n";
+    return 1;
+  }
 
-    return 0;
+  return 0;
 }
