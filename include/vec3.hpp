@@ -22,8 +22,8 @@ public:
     // Negation operator -v
     vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }
 
-    // Indexing, const for read, non-const for modification
-    T operator[](int i) const { return e[i]; }
+    // Indexing, const for read, non-const for modification, avoid copy by returning references.
+    const T& operator[](int i) const { return e[i]; }
     T& operator[](int i) { return e[i]; }
 
     // Compound Assignment
@@ -64,7 +64,7 @@ public:
 template <typename T>
 using point3 = vec3<T>;
 
-// Alias for Color
+// Alias for clarifying color as vectors.
 using color = vec3<int>;
 
 // Vector Utility Functions
