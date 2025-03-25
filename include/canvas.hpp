@@ -1,8 +1,6 @@
 #pragma once
 
-#include "vec3.hpp"
-#include <algorithm>
-#include <vector>
+#include "config.hpp"
 
 class Canvas {
 public:

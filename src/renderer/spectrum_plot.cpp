@@ -11,7 +11,7 @@ void spectrum(Canvas &canvas) {
 
   for (int col = 0; col < width; ++col) {
     // Normalize column index to range [0,1]
-    double normalizedValue = static_cast<double>(col) / (width - 1);
+    float normalizedValue = static_cast<float>(col) / (width - 1);
 
     // Convert normalized value to RGB color
     color v = spectralToRGB(normalizedValue);

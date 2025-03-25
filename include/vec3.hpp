@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <iostream>
+#include "config.hpp"
 
 template <typename T> class vec3 {
 public:
@@ -34,21 +33,19 @@ public:
     return *this;
   }
 
-  vec3 &operator*=(float t) {
+  vec3 &operator*=(T t) {
     e[0] *= t;
     e[1] *= t;
     e[2] *= t;
     return *this;
   }
 
-  vec3 &operator/=(float t) { return *this *= 1 / t; }
+  vec3 &operator/=(T t) { return *this *= T(1.0) / t; }
 
   // utility functions
-  float length_squared() const {
-    return e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
-  }
+  T length_squared() const { return e[0] * e[0] + e[1] * e[1] + e[2] * e[2]; }
 
-  float length() const { return std::sqrt(length_squared()); }
+  T length() const { return std::sqrt(length_squared()); }
 
   bool is_zero() const {
     return length_squared() < 1e-8; // Avoids precision issues

@@ -1,10 +1,6 @@
 #pragma once
 
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-
-#include "vec3.hpp"
+#include "config.hpp"
 
 // Normalize [0,1] to [380,740] nm wavelength
 double normalizedToWavelength(double value) {

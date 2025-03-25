@@ -1,7 +1,6 @@
 #pragma once
 
-#include "canvas.hpp"
-#include "renderPipeline.hpp"
+#include "config.hpp"
 
 // Grayscale gradient logic
 void grayscale(Canvas &canvas) {
@@ -9,7 +8,7 @@ void grayscale(Canvas &canvas) {
   const int height = canvas.height();
 
   for (int x = 0; x < width; ++x) {
-    int value = static_cast<int>(255 * (static_cast<double>(x) / (width - 1)));
+    int value = static_cast<int>(255 * (static_cast<float>(x) / (width - 1)));
     color v = {value, value, value};
 
     for (int y = 0; y < height; ++y) {

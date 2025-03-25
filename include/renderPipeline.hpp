@@ -1,8 +1,6 @@
 #pragma once
 
-#include "canvas.hpp"
 #include "config.hpp"
-#include <functional>
 
 // Function signature
 using RenderFunction = std::function<void(Canvas &)>;

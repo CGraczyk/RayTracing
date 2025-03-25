@@ -1,17 +1,12 @@
 #include "config.hpp"
 
-#include <iostream>
-#include <string>
-#include <unordered_map>
-
-
 #include "renderPipeline.hpp"
 
 // Renderer registry: map string to corresponding function
 std::unordered_map<std::string, RenderFunction> plots = {
     {"spectrum", spectrum}, {"grayscale", grayscale}, {"rt1", rt1}};
 
-// Raytracer
+// Renderer
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <renderer>\n";
