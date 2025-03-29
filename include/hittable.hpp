@@ -8,6 +8,7 @@ public:
   vec3<T> normal;
   color surface_color;
   int specular;
+  double reflective;
   T t;
   bool front_face;
 
