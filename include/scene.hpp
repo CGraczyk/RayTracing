@@ -9,13 +9,20 @@ using std::shared_ptr;
 template <typename T> class scene : public hittable<T> {
 public:
   std::vector<shared_ptr<hittable<T>>> objects;
+  std::vector<shared_ptr<light<T>>> lights;
 
   scene() {}
-  scene(shared_ptr<hittable<T>> object) { add(object); }
+  scene(shared_ptr<hittable<T>> object) { add_hittable(object); }
+  scene(shared_ptr<light<T>> light) { add_light(light); }
 
   void clear() { objects.clear(); }
 
-  void add(shared_ptr<hittable<T>> object) { objects.push_back(object); }
+  void add_hittable(shared_ptr<hittable<T>> object) {
+    objects.push_back(object);
+  }
+  void add_light(shared_ptr<light<T>> light) { lights.push_back(light); }
+
+  std::vector<std::shared_ptr<light<T>>> get_lights() const { return lights; }
 
   bool hit(const ray<T> &r, T ray_tmin, T ray_tmax,
            hit_record<T> &rec) const override {

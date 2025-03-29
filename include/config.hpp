@@ -36,3 +36,4 @@ inline auto degrees_to_radians(auto degrees) { return degrees * pi / 180.0; }
 #include "vec3.hpp"
 
 #include "canvas.hpp"
+#include "light.hpp"

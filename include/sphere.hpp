@@ -5,8 +5,9 @@
 
 template <typename T> class sphere : public hittable<T> {
 public:
-  sphere(const point3<T> &center, T radius, color color_)
-      : center(center), radius(std::fmax(0.0, radius)), surface_color(color_) {}
+  sphere(const point3<T> &center, T radius, color color_, int specular_)
+      : center(center), radius(std::fmax(0.0, radius)), surface_color(color_),
+        specular(specular_) {}
 
   bool hit(const ray<T> &r, T ray_tmin, T ray_tmax,
            hit_record<T> &h_record) const override {
@@ -34,8 +35,10 @@ public:
 
     h_record.t = root;
     h_record.p = r.at(root);
-    h_record.normal = (h_record.p - center) / radius;
+    vec3<T> outward_normal = (h_record.p - center) / radius;
+    h_record.set_face_normal(r, outward_normal);
     h_record.surface_color = surface_color;
+    h_record.specular = specular;
 
     return true;
   }
@@ -44,4 +47,5 @@ private:
   point3<T> center;
   T radius;
   color surface_color;
+  int specular;
 };

@@ -2,6 +2,7 @@
 
 #include "config.hpp"
 #include "hittable.hpp"
+#include "light.hpp"
 #include "scene.hpp"
 #include "sphere.hpp"
 
@@ -10,10 +11,63 @@ color create_color_from_vec(const vec3<double> vec) {
           int(255.999 * vec.z())};
 }
 
-color color_ray(const ray<double> &r, const hittable<double> &world) {
+double compute_light_multiplier(const ray<double> &r,
+                                const scene<double> &world,
+                                point3<double> camera_position,
+                                const hit_record<double> &record) {
+
+  double intensity = 0.0;
+  auto lights = world.get_lights();
+  vec3<double> lightray;
+
+  for (const auto &lightsource : lights) {
+    if (lightsource->type == kAmbient) {
+      intensity += lightsource->intensity;
+    } else {
+      if (lightsource->type == kPoint) {
+        lightray = lightsource->position - record.p;
+      } else {
+        lightray = lightsource->position - camera_position;
+      }
+
+      // Diffusion
+      auto normal_dot_lightray = dot(record.normal, lightray);
+      if (normal_dot_lightray > 0) {
+        intensity += lightsource->intensity * normal_dot_lightray /
+                     (record.normal.length() * lightray.length());
+      }
+
+      // Specular
+      if (record.specular != -1) {
+        vec3<double> viewpoint = -r.direction();
+        vec3<double> reflection =
+            2.0 * record.normal * dot(record.normal, lightray) - lightray;
+        auto reflection_dot_viewpoint = dot(reflection, viewpoint);
+
+        if (reflection_dot_viewpoint > 0) {
+          intensity += lightsource->intensity *
+                       pow(reflection_dot_viewpoint /
+                               (reflection.length() * viewpoint.length()),
+                           record.specular);
+        }
+      }
+    }
+  }
+  return intensity;
+}
+
+color color_ray(const ray<double> &r, const scene<double> &world) {
   hit_record<double> record;
+  point3<double> camera_position = {0.0, 0.0, 0.0};
   if (world.hit(r, 0, INFINITY, record)) {
-    return record.surface_color;
+
+    color object_color = record.surface_color;
+    vec3<double> colcont = {object_color.x() / 255.0, object_color.y() / 255.0,
+                            object_color.z() / 255.0};
+
+    double lighting_multiplier =
+        compute_light_multiplier(r, world, camera_position, record);
+    return create_color_from_vec(colcont * lighting_multiplier);
   }
 
   vec3<double> unit_direction = normalize(r.direction());
@@ -70,13 +124,31 @@ void rt1(Canvas &canvas) {
 
   // World
   scene<double> world;
+
   // Objects
-  world.add(make_shared<sphere<double>>(point3<double>(0.0, -1.0, 3.0), 1.0,
-                                        color(255, 0, 0))); // RED
-  world.add(make_shared<sphere<double>>(point3<double>(2.0, 0.0, 4.0), 1.0,
-                                        color(0, 0, 255))); // BLUE
-  world.add(make_shared<sphere<double>>(point3<double>(-2.0, 0.0, 4.0), 1.0,
-                                          color(0, 255, 0))); // GREEN
+  for (int i = 0; i < 1; i++) {
+    world.add_hittable(
+        make_shared<sphere<double>>(point3<double>(0.3, i * 1.0 - 1.0, 3.0),
+                                    1.0, color(255, 0, 0), 500)); // RED
+  }
+
+  world.add_hittable(make_shared<sphere<double>>(
+      point3<double>(2.0, 1.0, 8.0), 1.0, color(0, 0, 255), 200)); // BLUE
+  world.add_hittable(make_shared<sphere<double>>(
+      point3<double>(-2.0, 0.0, 5.0), 1.0, color(0, 255, 0), 200)); // GREEN
+
+  world.add_hittable(make_shared<sphere<double>>(
+      point3<double>(0.0, -5001.0, 0.0), 5000.0, color(255, 255, 0),
+      10)); // YELLOW
+
+  // Lights
+  world.add_light(
+      make_shared<light<double>>(kAmbient, point3<double>(0, 0, 0), 0.2));
+  world.add_light(
+      make_shared<light<double>>(kPoint, point3<double>(-6.0, 10.0, 4.0), 0.4));
+  world.add_light(make_shared<light<double>>(
+      kDirectonal, point3<double>(2.0, 10.0, -5.0), 0.6));
+
   // Renderer
   for (int x : std::ranges::iota_view(0, SCREEN_WIDTH)) {
     for (int y : std::ranges::iota_view(0, SCREEN_HEIGHT)) {
