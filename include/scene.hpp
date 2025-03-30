@@ -37,7 +37,7 @@ public:
           lightray_direction = lightsource->position - record.p;
           t_max = 1;
         } else {
-          lightray_direction = lightsource->position - camera_position;
+          lightray_direction = lightsource->position;
           t_max = INFINITY;
         }
 
