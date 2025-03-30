@@ -1,5 +1,6 @@
 #pragma once
 
+#include "camera.hpp"
 #include "config.hpp"
 #include "hittable.hpp"
 #include "light.hpp"
@@ -47,31 +48,15 @@ vec3<double> trace(const ray<double> &r, const scene<double> &world,
          background_gradient * vec3<double>(0.5, 0.7, 1.0);
 }
 
-// Converts screen space (pixel coordinates) to viewport coordinates
-vec3<double> screen_to_viewport(int x, int y) {
-
-  // Center the screen at (0,0) and flip Y-axis
-  auto Cx = x - (SCREEN_WIDTH / 2.0);
-  auto Cy = (SCREEN_HEIGHT / 2.0) - y;
-
-  // Transform centered coordinates to viewport coordinates in worldspace at
-  // projection plane at Z = 1 from camera origin
-  auto Vx = Cx * (VIEWPORT_WIDTH / SCREEN_WIDTH);
-  auto Vy = Cy * (VIEWPORT_HEIGHT / SCREEN_HEIGHT);
-  auto Vz = FOCAL_LENGTH;
-
-  return vec3<double>(Vx, Vy, Vz);
-}
-
 void populate_scene(scene<double> &world) {
 
   // Objects
   world.add_hittable(make_shared<sphere<double>>(
-      point3<double>(0.0, -1.0, 3.0), 1.0, color(255, 0, 0), 500, 0.8)); // RED
+      point3<double>(0.0, -1.0, 3.0), 1.0, color(255, 0, 0), 100, 0.5)); // RED
   world.add_hittable(make_shared<sphere<double>>(
       point3<double>(2.0, 0.0, 4.0), 1.0, color(0, 0, 255), 500, 0.3)); // BLUE
   world.add_hittable(make_shared<sphere<double>>(
-      point3<double>(-2.0, 0.0, 4.0), 1.0, color(0, 255, 0), 10, 0.4)); // GREEN
+      point3<double>(-2.0, 0.0, 4.0), 1.0, color(0, 255, 0), 10, 0.1)); // GREEN
   world.add_hittable(
       make_shared<sphere<double>>(point3<double>(0.0, -5001.0, 0.0), 5000.0,
                                   color(255, 255, 0), 1000, 0.1)); // YELLOW
@@ -80,16 +65,21 @@ void populate_scene(scene<double> &world) {
   world.add_light(
       make_shared<light<double>>(kAmbient, point3<double>(0, 0, 0), 0.2));
   world.add_light(
-      make_shared<light<double>>(kPoint, point3<double>(2.0, 1.0, 0.0), 0.6));
+      make_shared<light<double>>(kPoint, point3<double>(-4.0, 3.0, -1.0), 0.6));
   world.add_light(make_shared<light<double>>(
-      kDirectonal, point3<double>(1.0, 4.0, 4.0), 0.2));
+      kDirectonal, point3<double>(4.0, 10.0, 2.0), 0.2));
 }
 
 // Raytracing
 void raytracer(Canvas &canvas) {
 
+  double yaw = pi / 10;
+  double pitch = pi / 8;
+  double roll = pi / 8;
+
   // Camera position for the ray origin.
-  point3<double> camera_position = {0.0, 0.0, 0.0};
+  camera cam(point3<double>(-2.0, 1.0, 0.0), yaw, pitch, roll);
+
   int n_reflections = 3;
 
   // World
@@ -101,14 +91,12 @@ void raytracer(Canvas &canvas) {
     for (int y : std::ranges::iota_view(0, SCREEN_HEIGHT)) {
 
       // Create ray for each pixel on the screen
-      vec3<double> direction =
-          normalize(screen_to_viewport(x, y) - camera_position);
-      ray<double> r(camera_position, direction);
+      ray<double> r = cam.create_ray_to_pixel(x, y);
 
       // Compute the color of the pixel by raytracing the scene
-      canvas.set_pixel(x, y,
-                       create_color_from_vec(
-                           trace(r, world, camera_position, n_reflections)));
+      canvas.set_pixel(
+          x, y,
+          create_color_from_vec(trace(r, world, cam.position, n_reflections)));
     }
   }
 }
