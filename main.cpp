@@ -1,26 +1,16 @@
-#include "config.hpp"
+#include "canvas.hpp"
 
-#include "renderPipeline.hpp"
+// Function signature
+void raytracer(Canvas &canvas);
+void spectrum(Canvas &canvas);
+void grayscale(Canvas &canvas);
 
-// Renderer registry: map string to corresponding function
-std::unordered_map<std::string, RenderFunction> plots = {
-    {"spectrum", spectrum}, {"grayscale", grayscale}, {"rt1", rt1}};
+int main() {
+  Canvas canvas(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-// Renderer
-int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <renderer>\n";
-    return 1;
-  }
+  // Call the user-provided function to set pixel values
+  raytracer(canvas);
 
-  std::string mode = argv[1];
-
-  if (plots.find(mode) != plots.end()) {
-    runRenderer(plots[mode]);
-  } else {
-    std::cerr << "Unknown renderer: " << mode << "\n";
-    return 1;
-  }
-
-  return 0;
+  // Render the final result
+  canvas.render();
 }

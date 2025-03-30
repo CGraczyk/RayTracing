@@ -1,7 +1,6 @@
 # Ignore build files
 /build/
-/Debug/
-/Release/
+/output/
 /external/
 /bin/
 /obj/
