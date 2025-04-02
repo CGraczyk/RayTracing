@@ -24,6 +24,10 @@ constexpr float VIEWPORT_WIDTH = 1.0;
 constexpr float VIEWPORT_HEIGHT = VIEWPORT_WIDTH / ASPECT_RATIO;
 constexpr float FOCAL_LENGTH = 1.0;
 
+// Tracer Options
+constexpr int N_REFLECTIONS = 3;  // surface bounces per ray
+constexpr int N_ANTIALIASING = 2; // squared number of rays per pixel
+
 // Utility
 const auto pi = std::numbers::pi;
 

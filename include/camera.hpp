@@ -37,16 +37,21 @@ public:
             v[0] * (-sp) + v[1] * (cp * sr) + v[2] * (cp * cr)};
   }
 
-  ray<double> create_ray_to_pixel(int x, int y) {
+  ray<double> create_ray_to_pixel(int x, int y, double offset_x,
+                                  double offset_y) {
     // Center the screen at (0,0) and flip Y-axis
-    auto Cx = x - (SCREEN_WIDTH / 2.0);
-    auto Cy = (SCREEN_HEIGHT / 2.0) - y;
+    double Cx = x - (SCREEN_WIDTH / 2.0);
+    double Cy = (SCREEN_HEIGHT / 2.0) - y;
 
     // Transform centered coordinates to viewport coordinates in worldspace at
     // projection plane at Z = 1 from camera origin
-    auto Vx = Cx * (VIEWPORT_WIDTH / SCREEN_WIDTH);
-    auto Vy = Cy * (VIEWPORT_HEIGHT / SCREEN_HEIGHT);
-    auto Vz = FOCAL_LENGTH;
+    double pixel_size_x = VIEWPORT_WIDTH / SCREEN_WIDTH;
+    double pixel_size_y = VIEWPORT_HEIGHT / SCREEN_HEIGHT;
+
+    // Viewport coordinates
+    double Vx = (Cx + offset_x) * pixel_size_x;
+    double Vy = (Cy + offset_y) * pixel_size_y;
+    double Vz = FOCAL_LENGTH;
 
     vec3<double> direction = normalize(vec3<double>(Vx, Vy, Vz));
 

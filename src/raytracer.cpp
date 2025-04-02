@@ -73,14 +73,11 @@ void populate_scene(scene<double> &world) {
 // Raytracing
 void raytracer(Canvas &canvas) {
 
+  // Camera position for the ray origin.
   double yaw = pi / 10;
   double pitch = pi / 8;
   double roll = pi / 8;
-
-  // Camera position for the ray origin.
   camera cam(point3<double>(-2.0, 1.0, 0.0), yaw, pitch, roll);
-
-  int n_reflections = 3;
 
   // World
   scene<double> world;
@@ -90,13 +87,32 @@ void raytracer(Canvas &canvas) {
   for (int x : std::ranges::iota_view(0, SCREEN_WIDTH)) {
     for (int y : std::ranges::iota_view(0, SCREEN_HEIGHT)) {
 
-      // Create ray for each pixel on the screen
-      ray<double> r = cam.create_ray_to_pixel(x, y);
+      vec3<double> sample_color(0.0, 0.0, 0.0);
+
+      // Supersampling
+      if (N_ANTIALIASING > 0) {
+        for (int i = 0; i < N_ANTIALIASING; i++) {
+          for (int j = 0; j < N_ANTIALIASING; j++) {
+
+            // Grid-based jitter within pixel in range [-1,1]
+            double offset_x = ((i + 0.5) / N_ANTIALIASING - 0.5) * 2;
+            double offset_y = ((j + 0.5) / N_ANTIALIASING - 0.5) * 2;
+
+            // Create supersampled ray for each pixel on the screen
+            ray<double> r = cam.create_ray_to_pixel(x, y, offset_x, offset_y);
+            // Compute the color of the pixel by raytracing the scene
+            sample_color += trace(r, world, cam.position, N_REFLECTIONS);
+          }
+        }
+        sample_color /= N_ANTIALIASING * N_ANTIALIASING;
+      } else {
+        ray<double> r = cam.create_ray_to_pixel(x, y, 0.0, 0.0);
+        // Compute the color of the pixel by raytracing the scene
+        sample_color += trace(r, world, cam.position, N_REFLECTIONS);
+      }
 
       // Compute the color of the pixel by raytracing the scene
-      canvas.set_pixel(
-          x, y,
-          create_color_from_vec(trace(r, world, cam.position, n_reflections)));
+      canvas.set_pixel(x, y, create_color_from_vec(sample_color));
     }
   }
 }
