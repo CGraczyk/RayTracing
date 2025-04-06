@@ -6,84 +6,86 @@
 using std::make_shared;
 using std::shared_ptr;
 
-template <typename T> class scene : public hittable<T> {
+template <typename T> class Scene : public Hittable<T> {
 public:
-  std::vector<shared_ptr<hittable<T>>> objects;
-  std::vector<shared_ptr<light<T>>> lights;
+  std::vector<shared_ptr<Hittable<T>>> m_objects;
+  std::vector<shared_ptr<Light<T>>> m_lights;
 
-  scene() {}
-  scene(shared_ptr<hittable<T>> object) { add_hittable(object); }
-  scene(shared_ptr<light<T>> light) { add_light(light); }
+  Scene() {}
+  Scene(shared_ptr<Hittable<T>> object) { add_hittable(object); }
+  Scene(shared_ptr<Light<T>> light) { add_light(light); }
 
-  void clear() { objects.clear(); }
+  void clear_objects() { m_objects.clear(); }
 
-  void add_hittable(shared_ptr<hittable<T>> object) {
-    objects.push_back(object);
+  void clear_lights() { m_lights.clear(); }
+
+  void add_hittable(shared_ptr<Hittable<T>> object) {
+    m_objects.push_back(object);
   }
-  void add_light(shared_ptr<light<T>> light) { lights.push_back(light); }
+  void add_light(shared_ptr<Light<T>> light) { m_lights.push_back(light); }
 
-  T light_multiplier(const ray<T> &r, const point3<T> &camera_position,
-                     const hit_record<T> &record) const {
+  // Whiteness multiplier from the visible lightsources in the scene.
+  T albedo(const Ray<T> &r, const Point3<T> &camera_position,
+           const HitRecord<T> &record) const {
 
-    T intensity = 0.0;
-    vec3<T> lightray_direction;
+    T albedo = 0.0;
+    Vec3<T> direction;
     T t_max = 0.0;
 
-    for (const auto &lightsource : lights) {
-      if (lightsource->type == kAmbient) {
-        intensity += lightsource->intensity;
+    for (const auto &lightsource : m_lights) {
+      if (lightsource->m_type == kAmbient) {
+        albedo += lightsource->m_intensity;
       } else {
-        if (lightsource->type == kPoint) {
-          lightray_direction = lightsource->position - record.p;
+        if (lightsource->m_type == kPoint) {
+          direction = lightsource->m_position - record.m_hitPoint;
           t_max = 1;
         } else {
-          lightray_direction = lightsource->position;
+          direction = lightsource->m_position;
           t_max = INFINITY;
         }
 
         // Shadowcheck
-        hit_record<T> shadow_record;
-        ray<T> shadow_r(r.at(record.t), lightray_direction);
-        if (!hit(shadow_r, 0.001, t_max, shadow_record)) {
+        HitRecord<T> shadowRecord;
+        Ray<T> shadowRay(r.at(record.m_t), direction, 0);
+        if (!hit(shadowRay, 0.001, t_max, shadowRecord)) {
 
           // Diffusion
-          T normal_dot_lightray = dot(record.normal, lightray_direction);
-          if (normal_dot_lightray > 0) {
-            intensity += lightsource->intensity * normal_dot_lightray /
-                         (record.normal.length() * lightray_direction.length());
+          T diffusion = dot(record.m_normal, direction) /
+                        (record.m_normal.length() * direction.length());
+          if (diffusion > 0) {
+            albedo += lightsource->m_intensity * diffusion;
           }
 
           // Specular
-          if (record.specular != -1) {
-            vec3<T> viewpoint = -r.direction();
-            vec3<T> reflection =
-                reflect_direction(lightray_direction, record.normal);
+          if (record.specular() != -1) {
 
-            auto reflection_dot_viewpoint = dot(reflection, -r.direction());
+            Vec3<T> reflection = reflected(direction, record.m_normal);
 
-            if (reflection_dot_viewpoint > 0) {
-              intensity += lightsource->intensity *
-                           pow(reflection_dot_viewpoint /
-                                   (reflection.length() * viewpoint.length()),
-                               record.specular);
+            auto reflectedDiffusion =
+                dot(reflection, -r.direction()) /
+                (reflection.length() * -r.direction().length());
+
+            if (reflectedDiffusion > 0) {
+              albedo += lightsource->m_intensity *
+                        pow(reflectedDiffusion, record.specular());
             }
           }
         }
       }
     }
-    return intensity;
+    return albedo;
   }
 
-  bool hit(const ray<T> &r, T ray_tmin, T ray_tmax,
-           hit_record<T> &rec) const override {
-    hit_record<T> temp_rec;
+  bool hit(const Ray<T> &r, T ray_tmin, T ray_tmax,
+           HitRecord<T> &rec) const override {
+    HitRecord<T> temp_rec;
     bool hit_anything = false;
-    auto closest_so_far = ray_tmax;
+    auto current_closest = ray_tmax;
 
-    for (const auto &object : objects) {
-      if (object->hit(r, ray_tmin, closest_so_far, temp_rec)) {
+    for (const auto &object : m_objects) {
+      if (object->hit(r, ray_tmin, current_closest, temp_rec)) {
         hit_anything = true;
-        closest_so_far = temp_rec.t;
+        current_closest = temp_rec.m_t;
         rec = temp_rec;
       }
     }

@@ -2,19 +2,21 @@
 
 #include "vec3.hpp"
 
-template <typename T> class ray {
+template <typename T> class Ray {
 public:
-  ray() {}
+  Ray() {}
 
-  ray(const point3<T> &origin, const vec3<T> &direction)
-      : origin_(origin), direction_(direction) {}
+  Ray(const Point3<T> &origin, const Vec3<T> &direction, int bounces)
+      : m_origin(origin), m_direction(direction), m_bounces(bounces) {}
 
-  const point3<T> &origin() const { return origin_; }
-  const vec3<T> &direction() const { return direction_; }
+  const Point3<T> &origin() const { return m_origin; }
+  const Vec3<T> &direction() const { return m_direction; }
 
-  point3<T> at(auto t) const { return origin_ + t * direction_; }
+  const Point3<T> at(T t) const { return m_origin + t * m_direction; }
+  int bounces() const { return m_bounces; }
 
 private:
-  point3<T> origin_;
-  vec3<T> direction_;
+  Point3<T> m_origin;
+  Vec3<T> m_direction;
+  int m_bounces;
 };

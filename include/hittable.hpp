@@ -2,28 +2,36 @@
 
 #include "config.hpp"
 
-template <typename T> class hit_record {
-public:
-  point3<T> p;
-  vec3<T> normal;
-  color surface_color;
-  int specular;
-  double reflective;
-  T t;
-  bool front_face;
+struct Material {
+  Color m_surfaceColor{};
+  int m_specular = 0;
+  double m_reflectiveness = 0.0;
+  double m_transparency = 0.0;
+  double m_refractionIndex = 1.0;
+};
 
-  void set_face_normal(const ray<T> &r, const vec3<T> &outward_normal) {
-    // Sets the hit record normal vector.
-    // Note: the parameter outward normal is expected to be unit length.
+template <typename T> struct HitRecord {
+  Point3<T> m_hitPoint;
+  Vec3<T> m_normal;
+  std::shared_ptr<Material> m_material;
+  T m_t;
+  bool m_frontFace;
 
-    front_face = dot(r.direction(), outward_normal) <= 0;
-    normal = front_face ? outward_normal : -outward_normal;
+  const Color &surfaceColor() const { return m_material->m_surfaceColor; }
+  const int specular() const { return m_material->m_specular; }
+  const double reflectiveness() const { return m_material->m_reflectiveness; }
+  const double transparency() const { return m_material->m_transparency; }
+  const double refractionIndex() const { return m_material->m_refractionIndex; }
+
+  void set_faceNormal(const Ray<T> &r, const Vec3<T> &outwardNormal) {
+    m_frontFace = dot(r.direction(), outwardNormal) <= 0;
+    m_normal = m_frontFace ? outwardNormal : -outwardNormal;
   }
 };
 
-template <typename T> class hittable {
+template <typename T> class Hittable {
 public:
-  virtual ~hittable() = default;
-  virtual bool hit(const ray<T> &r, T ray_tmin, T ray_tmax,
-                   hit_record<T> &h_record) const = 0;
+  virtual ~Hittable() = default;
+  virtual bool hit(const Ray<T> &r, T ray_tmin, T ray_tmax,
+                   HitRecord<T> &record) const = 0;
 };
