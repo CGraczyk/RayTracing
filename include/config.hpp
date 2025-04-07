@@ -26,7 +26,7 @@ constexpr float FOCAL_LENGTH = 1.0;
 
 // Tracer Options
 constexpr int N_REFLECTIONS = 3;  // surface bounces per Ray
-constexpr int N_ANTIALIASING = 2; // squared number of rays per pixel
+constexpr int N_ANTIALIASING = 8; // squared number of rays per pixel
 
 // Utility
 const auto pi = std::numbers::pi;

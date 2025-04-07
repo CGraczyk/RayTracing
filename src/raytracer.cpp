@@ -7,7 +7,7 @@
 #include "sphere.hpp"
 
 Vec3<double> trace(const Ray<double> &ray, const Scene<double> &world,
-                   const Point3<double> &cam_position, double t) {
+                   const Point3<double> &cam_position) {
   HitRecord<double> record;
 
   // Collision test for objects in the world.
@@ -20,9 +20,6 @@ Vec3<double> trace(const Ray<double> &ray, const Scene<double> &world,
     local_color *= albedo(ray, world, cam_position, record);
 
     // Compute transparency.
-    if (record.transparency() >= 0.0) {
-      record.set_transparency(t);
-    }
     if (record.transparency() > 0.0) {
 
       Ray<double> transparent_ray(ray.at(record.m_t), ray.direction(),
@@ -46,16 +43,12 @@ Vec3<double> trace(const Ray<double> &ray, const Scene<double> &world,
         }
       }
 
-      record.set_reflectiveness(1.0);
       // Compute transparent ray color
       Vec3<double> transparent_color =
-          trace(transparent_ray, world, cam_position, 0.0);
+          trace(transparent_ray, world, cam_position);
 
-      record.set_transparency(1.0);
       local_color = local_color * (1.0 - record.transparency()) +
                     transparent_color * record.transparency();
-
-      record.set_reflectiveness(0.0);
     }
 
     // Compute surface reflections after first transparent ray split.
@@ -66,11 +59,7 @@ Vec3<double> trace(const Ray<double> &ray, const Scene<double> &world,
                                reflected(-ray.direction(), record.m_normal),
                                ray.bounces() - 1);
 
-      Vec3<double> reflection_color =
-          trace(reflectedRay, world, cam_position, 1.0);
-          if ( record.transparency() >= 0.0) {
-            record.set_reflectiveness(1.0);
-          }
+      Vec3<double> reflection_color = trace(reflectedRay, world, cam_position);
       return local_color * (1.0 - record.reflectiveness()) +
              reflection_color * record.reflectiveness();
     }
@@ -97,8 +86,10 @@ void populate_scene(Scene<double> &world) {
   auto material_ground =
       make_shared<Material>(Color(255, 255, 0), 1000, 0.0, -0.1, 1.0);
 
-  auto material_tintedGlass =
-      make_shared<Material>(Color(255, 255, 255), 1000, 0.0, 0.9, 1.0);
+  auto material_refractedGlass =
+      make_shared<Material>(Color(255, 255, 255), 1000, 0.0, 0.9, 1.5);
+  auto material_mirror =
+      make_shared<Material>(Color(255, 255, 255), 1000, 1.0, 0.0, 1);
 
   // Origin
   world.add_hittable(make_shared<Sphere<double>>(
@@ -116,7 +107,9 @@ void populate_scene(Scene<double> &world) {
       Point3<double>(0.0, -5000.0, 0.0), 5000.0, material_ground));
 
   world.add_hittable(make_shared<Sphere<double>>(Point3<double>(3.0, 3.0, 10.0),
-                                                 3.0, material_tintedGlass));
+                                                 2.0, material_refractedGlass));
+  world.add_hittable(make_shared<Sphere<double>>(Point3<double>(0.0, 1.0, 5),
+                                                 0.5, material_mirror));
 
   // Lights
   world.add_light(
@@ -131,8 +124,8 @@ void populate_scene(Scene<double> &world) {
 void raytracer(Canvas &canvas) {
 
   // Camera position for the ray origin.
-  double zoom = 1.5;
-  Camera cam(Point3<double>(-2.5 * zoom, 2.0 * zoom, -1.3 * zoom), 27.5, 10, 0);
+  double zoom = 1;
+  Camera cam(Point3<double>(-2.5 * zoom, 2.0 * zoom, -1.0 * zoom), 27.5, 10, 0);
 
   // World
   Scene<double> world;
@@ -156,14 +149,14 @@ void raytracer(Canvas &canvas) {
             // Create supersampled ray for each pixel on the screen
             Ray<double> r = cam.create_pixelRay(x, y, offset_x, offset_y);
             // Compute the color of the pixel by raytracing the scene
-            pixel_color += trace(r, world, cam.position(), 1.0);
+            pixel_color += trace(r, world, cam.position());
           }
         }
         pixel_color /= N_ANTIALIASING * N_ANTIALIASING;
       } else {
         Ray<double> ray = cam.create_pixelRay(x, y, 0.0, 0.0);
         // Compute the color of the pixel by raytracing the scene
-        pixel_color += trace(ray, world, cam.position(), 1.0);
+        pixel_color += trace(ray, world, cam.position());
       }
 
       // Compute the color of the pixel by raytracing the scene
