@@ -3,37 +3,68 @@
 #include "camera.hpp"
 #include "config.hpp"
 #include "hittable.hpp"
-#include "light.hpp"
-#include "scene.hpp"
+#include "light_physics.hpp"
 #include "sphere.hpp"
 
 Vec3<double> trace(const Ray<double> &ray, const Scene<double> &world,
                    const Point3<double> &cam_position) {
   HitRecord<double> record;
-  if (world.hit(ray, 0.001, INFINITY, record)) {
 
+  // Collision test for objects in the world.
+  if (world.hit(ray, 0.001, INFINITY, record)) {
     Vec3<double> local_color = {record.surfaceColor().x() / 255.0,
                                 record.surfaceColor().y() / 255.0,
                                 record.surfaceColor().z() / 255.0};
 
-    local_color *= world.albedo(ray, cam_position, record);
+    // Compute whiteness multiplier.
+    local_color *= albedo(ray, world, cam_position, record);
+
+    // Compute transparency.
+    if (record.transparency() > 0.0) {
+      Ray<double> transparent_ray(ray.at(record.m_t), ray.direction(),
+                                  ray.bounces());
+      // Compute refraction from material.
+      if (ray.refractionIndex() != record.refractionIndex()) {
+
+        double n = ray.refractionIndex() / record.refractionIndex();
+        const double cosI = -dot(record.m_normal, normalize(ray.direction()));
+        const double sinT2 = n * n * (1.0 - cosI * cosI);
+        if (sinT2 <= 1.0) {
+
+          const double cosT = sqrt(1.0 - sinT2);
+          Vec3<double> refractedDirection = n * normalize(ray.direction()) +
+                                            (n * cosI - cosT) * record.m_normal;
+
+          transparent_ray = Ray<double>(ray.at(record.m_t), refractedDirection,
+                                        ray.bounces());
+          transparent_ray.set_refractionIndex(record.refractionIndex());
+        }
+      }
+
+      // Compute transparent ray color
+      Vec3<double> transparent_color =
+          trace(transparent_ray, world, cam_position);
+
+      local_color = local_color * (1.0 - record.transparency()) +
+                    transparent_color * record.transparency();
+    }
 
     if (ray.bounces() <= 0 or record.reflectiveness() <= 0) {
       return local_color;
     }
+
+    // Compute surface reflections.
     Ray<double> reflectedRay(ray.at(record.m_t),
                              reflected(-ray.direction(), record.m_normal),
                              ray.bounces() - 1);
 
     Vec3<double> reflection_color = trace(reflectedRay, world, cam_position);
-    return local_color * (1 - record.reflectiveness()) +
+    return local_color * (1.0 - record.reflectiveness()) +
            reflection_color * record.reflectiveness();
   }
 
   // Create Background Sky Gradient.
   auto background_gradient = 0.5 * (normalize(ray.direction()).y() + 1.0);
-
-  // Translate the color values in [0,1] to the byte range [0,255] after return
   return (1.0 - background_gradient) * Vec3<double>(1.0, 1.0, 1.0) +
          background_gradient * Vec3<double>(0.5, 0.7, 1.0);
 }
@@ -42,14 +73,17 @@ void populate_scene(Scene<double> &world) {
 
   // Create object materials
   auto material_red =
-      make_shared<Material>(Color(255, 0, 0), 100, 0.5, 0.0, 0.0);
+      make_shared<Material>(Color(255, 0, 0), 100, 0.5, 0.0, 1.0);
   auto material_blue =
-      make_shared<Material>(Color(0, 0, 255), 500, 0.3, 0.0, 0.0);
+      make_shared<Material>(Color(0, 0, 255), 500, 0.3, 0.0, 1.0);
   auto material_green =
-      make_shared<Material>(Color(0, 255, 0), 10, 0.1, 0.0, 0.0);
+      make_shared<Material>(Color(0, 255, 0), 10, 0.1, 0.0, 1.0);
 
   auto material_ground =
-      make_shared<Material>(Color(255, 255, 0), 1000, 0.1, 0.0, 0.0);
+      make_shared<Material>(Color(255, 255, 0), 1000, 0.1, 0.0, 1.0);
+
+  auto material_tintedGlass =
+      make_shared<Material>(Color(255, 0, 255), 1000, 0.0, 1.0, 1.0);
 
   // Objects
   world.add_hittable(make_shared<Sphere<double>>(Point3<double>(0.0, -1.0, 3.0),
@@ -60,6 +94,9 @@ void populate_scene(Scene<double> &world) {
                                                  1.0, material_green));
   world.add_hittable(make_shared<Sphere<double>>(
       Point3<double>(0.0, -5001.0, 0.0), 5000.0, material_ground));
+
+  world.add_hittable(make_shared<Sphere<double>>(Point3<double>(0.0, 1.0, 4.0),
+                                                 1.0, material_tintedGlass));
 
   // Lights
   world.add_light(

@@ -24,58 +24,6 @@ public:
   }
   void add_light(shared_ptr<Light<T>> light) { m_lights.push_back(light); }
 
-  // Whiteness multiplier from the visible lightsources in the scene.
-  T albedo(const Ray<T> &r, const Point3<T> &camera_position,
-           const HitRecord<T> &record) const {
-
-    T albedo = 0.0;
-    Vec3<T> direction;
-    T t_max = 0.0;
-
-    for (const auto &lightsource : m_lights) {
-      if (lightsource->m_type == kAmbient) {
-        albedo += lightsource->m_intensity;
-      } else {
-        if (lightsource->m_type == kPoint) {
-          direction = lightsource->m_position - record.m_hitPoint;
-          t_max = 1;
-        } else {
-          direction = lightsource->m_position;
-          t_max = INFINITY;
-        }
-
-        // Shadowcheck
-        HitRecord<T> shadowRecord;
-        Ray<T> shadowRay(r.at(record.m_t), direction, 0);
-        if (!hit(shadowRay, 0.001, t_max, shadowRecord)) {
-
-          // Diffusion
-          T diffusion = dot(record.m_normal, direction) /
-                        (record.m_normal.length() * direction.length());
-          if (diffusion > 0) {
-            albedo += lightsource->m_intensity * diffusion;
-          }
-
-          // Specular
-          if (record.specular() != -1) {
-
-            Vec3<T> reflection = reflected(direction, record.m_normal);
-
-            auto reflectedDiffusion =
-                dot(reflection, -r.direction()) /
-                (reflection.length() * -r.direction().length());
-
-            if (reflectedDiffusion > 0) {
-              albedo += lightsource->m_intensity *
-                        pow(reflectedDiffusion, record.specular());
-            }
-          }
-        }
-      }
-    }
-    return albedo;
-  }
-
   bool hit(const Ray<T> &r, T ray_tmin, T ray_tmax,
            HitRecord<T> &rec) const override {
     HitRecord<T> temp_rec;

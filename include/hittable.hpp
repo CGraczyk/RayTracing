@@ -6,7 +6,7 @@ struct Material {
   Color m_surfaceColor{};
   int m_specular = 0;
   double m_reflectiveness = 0.0;
-  double m_transparency = 0.0;
+  double m_transparency = 1.0;
   double m_refractionIndex = 1.0;
 };
 
