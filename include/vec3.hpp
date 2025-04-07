@@ -96,11 +96,6 @@ template <typename T> inline T distance(const Vec3<T> &u, const Vec3<T> &v) {
   return (u - v).length();
 }
 
-template <typename T>
-inline Vec3<T> reflected(const Vec3<T> &direction, const Vec3<T> &normal) {
-  return 2.0 * normal * dot(normal, direction) - direction;
-}
-
 // Compute the angle theta between vectors by dot(u,v) = u.length()* v.length()
 // * cos(theta)
 template <typename T> inline T dot(const Vec3<T> &u, const Vec3<T> &v) {

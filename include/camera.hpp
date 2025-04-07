@@ -7,6 +7,7 @@ public:
   Camera(Point3<double> position, double yaw, double pitch, double roll)
       : m_position(position), m_yaw(yaw), m_pitch(pitch), m_roll(roll) {}
 
+  double degrees_to_radians(double degrees) { return degrees * (pi / 180.0); }
   // This function applies a 3D rotation to the vector `v` based on the given
   // yaw, pitch, and roll angles.
   // - yaw (rotation around Y-axis): rotates the vector in the X-Z plane
@@ -22,12 +23,15 @@ public:
 
   Vec3<double> rotate3D(const Vec3<double> &v) {
 
-    double c_yaw = cos(m_roll),
-           s_yaw = sin(m_roll); // Cosine and sine of yaw (Y-axis rotation)
-    double c_pitch = cos(m_yaw),
-           s_pitch = sin(m_yaw); // Cosine and sine of pitch (X-axis rotation)
-    double c_roll = cos(m_pitch),
-           s_roll = sin(m_pitch); // Cosine and sine of roll (Z-axis rotation)
+    double c_yaw = cos(degrees_to_radians(m_roll)),
+           s_yaw = sin(degrees_to_radians(
+               m_roll)); // Cosine and sine of yaw (Y-axis rotation)
+    double c_pitch = cos(degrees_to_radians(m_yaw)),
+           s_pitch = sin(degrees_to_radians(
+               m_yaw)); // Cosine and sine of pitch (X-axis rotation)
+    double c_roll = cos(degrees_to_radians(m_pitch)),
+           s_roll = sin(degrees_to_radians(
+               m_pitch)); // Cosine and sine of roll (Z-axis rotation)
 
     return {v[0] * (c_yaw * c_pitch) +
                 v[1] * (c_yaw * s_pitch * s_roll - s_yaw * c_roll) +

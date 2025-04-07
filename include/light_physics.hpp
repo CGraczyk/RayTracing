@@ -16,12 +16,13 @@ double albedo(const Ray<double> &ray, const Scene<double> &world,
               const HitRecord<double> &record) {
 
   double albedo = 0.0;
+  double ambient = 0.0;
   Vec3<double> direction;
   double t_max = 0.0;
 
   for (const auto &lightsource : world.m_lights) {
     if (lightsource->m_type == kAmbient) {
-      albedo += lightsource->m_intensity;
+      ambient += lightsource->m_intensity;
     } else {
       if (lightsource->m_type == kPoint) {
         direction = lightsource->m_position - record.m_hitPoint;
@@ -35,10 +36,9 @@ double albedo(const Ray<double> &ray, const Scene<double> &world,
       // transparent, light needs to be computed from the current lightsource.
       // Thus "no hit and transparent true" should compute light.
       HitRecord<double> shadowRecord;
-      std::cout << shadowRecord.transparency();
       Ray<double> shadowRay(ray.at(record.m_t), direction, 0);
-      if (!world.hit(shadowRay, 0.001, t_max, shadowRecord) and
-          shadowRecord.transparency() != 0.0) {
+
+      if (!world.hit(shadowRay, 0.00001, t_max, shadowRecord)) {
 
         // Diffusion
         double diffusion = dot(record.m_normal, direction) /
@@ -61,9 +61,8 @@ double albedo(const Ray<double> &ray, const Scene<double> &world,
                       pow(reflectedDiffusion, record.specular());
           }
         }
-        albedo *= shadowRecord.transparency();
       }
     }
   }
-  return albedo;
+  return albedo + ambient;
 }

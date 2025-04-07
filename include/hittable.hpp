@@ -27,6 +27,13 @@ template <typename T> struct HitRecord {
     m_frontFace = dot(r.direction(), outwardNormal) <= 0;
     m_normal = m_frontFace ? outwardNormal : -outwardNormal;
   }
+
+  void set_transparency(double transparency) {
+    m_material->m_transparency = transparency;
+  }
+  void set_reflectiveness(double reflectiveness) {
+    m_material->m_reflectiveness = reflectiveness;
+  }
 };
 
 template <typename T> class Hittable {
