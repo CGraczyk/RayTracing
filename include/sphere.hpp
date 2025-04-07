@@ -3,21 +3,19 @@
 #include "config.hpp"
 #include "hittable.hpp"
 
-template <typename T> class sphere : public hittable<T> {
+template <typename T> class Sphere : public Hittable<T> {
 public:
-  sphere(const point3<T> &center, T radius, color color_, int specular_,
-         double reflective_)
-      : center(center), radius(std::fmax(0.0, radius)), surface_color(color_),
-        specular(specular_), reflective(reflective_) {}
+  Sphere(const Point3<T> &center, T radius, shared_ptr<Material> mat)
+      : m_center(center), m_radius(std::fmax(0.0, radius)), m_material(mat) {}
 
-  bool hit(const ray<T> &r, T ray_tmin, T ray_tmax,
-           hit_record<T> &h_record) const override {
+  bool hit(const Ray<T> &r, T ray_tmin, T ray_tmax,
+           HitRecord<T> &h_record) const override {
 
-    vec3<T> camera_orientation = center - r.origin();
+    Vec3<T> camera_orientation = m_center - r.origin();
     // Calculate ray hitting sphere by PQ formula from at^2 + bt + c = 0:
     auto a = r.direction().length_squared();
     auto b = dot(camera_orientation, r.direction()); // factor 2 canceled out
-    auto c = camera_orientation.length_squared() - (radius * radius);
+    auto c = camera_orientation.length_squared() - (m_radius * m_radius);
 
     // {t_1,t_2} = -b +- sqrt(b^2 - a*c)/a is solvable if
     auto discriminant = (b * b) - a * c;
@@ -34,21 +32,17 @@ public:
         return false;
     }
 
-    h_record.t = root;
-    h_record.p = r.at(root);
-    vec3<T> outward_normal = (h_record.p - center) / radius;
-    h_record.set_face_normal(r, outward_normal);
-    h_record.surface_color = surface_color;
-    h_record.specular = specular;
-    h_record.reflective = reflective;
+    h_record.m_t = root;
+    h_record.m_hitPoint = r.at(root);
+    Vec3<T> outward_normal = (h_record.m_hitPoint - m_center) / m_radius;
+    h_record.set_faceNormal(r, outward_normal);
+    h_record.m_material = m_material;
 
     return true;
   }
 
 private:
-  point3<T> center;
-  T radius;
-  color surface_color;
-  int specular;
-  double reflective;
+  Point3<T> m_center;
+  T m_radius;
+  shared_ptr<Material> m_material;
 };
