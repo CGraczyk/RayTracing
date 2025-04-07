@@ -125,7 +125,7 @@ void raytracer(Canvas &canvas) {
 
   // Camera position for the ray origin.
   double zoom = 1;
-  Camera cam(Point3<double>(-2.5 * zoom, 2.0 * zoom, -1.0 * zoom), 27.5, 10, 0);
+  Camera cam(Point3<double>(-2.5 * zoom, 2.0 * zoom, -1.0 * zoom), 23, 10, 0);
 
   // World
   Scene<double> world;
