@@ -41,7 +41,7 @@ Vec3<double> trace(const Ray<double> &ray, const Scene<double> &world,
                                             (n * cosI - cosT) * record.m_normal;
 
           transparent_ray = Ray<double>(ray.at(record.m_t), refractedDirection,
-                                        ray.bounces() - 1);
+                                        ray.bounces());
           transparent_ray.set_refractionIndex(record.refractionIndex());
         }
       }
@@ -68,9 +68,9 @@ Vec3<double> trace(const Ray<double> &ray, const Scene<double> &world,
 
       Vec3<double> reflection_color =
           trace(reflectedRay, world, cam_position, 1.0);
-          if ( record.transparency() >= 0.0) {
-            record.set_reflectiveness(1.0);
-          }
+      if (record.transparency() >= 0.0) {
+        record.set_reflectiveness(1.0);
+      }
       return local_color * (1.0 - record.reflectiveness()) +
              reflection_color * record.reflectiveness();
     }
@@ -84,39 +84,51 @@ Vec3<double> trace(const Ray<double> &ray, const Scene<double> &world,
          background_gradient * Vec3<double>(0.5, 0.7, 1.0);
 }
 
+inline Point3<double> pull(const Vec3<double> &obj, const Vec3<double> &well,
+                           double k) {
+  return k * (well - obj) + obj;
+}
+
 void populate_scene(Scene<double> &world) {
 
   // Create object materials
   auto material_red =
       make_shared<Material>(Color(255, 0, 0), 100, 0.5, -0.1, 1.0);
   auto material_blue =
-      make_shared<Material>(Color(0, 0, 255), 500, 0.3, -0.1, 1.0);
+      make_shared<Material>(Color(0, 0, 255), 500, 0.5, -0.1, 1.0);
   auto material_green =
-      make_shared<Material>(Color(0, 255, 0), 10, 0.1, -0.1, 1.0);
+      make_shared<Material>(Color(0, 255, 0), 10, 0.5, -0.1, 1.0);
 
   auto material_ground =
       make_shared<Material>(Color(255, 255, 0), 1000, 0.0, -0.1, 1.0);
 
-  auto material_tintedGlass =
-      make_shared<Material>(Color(255, 255, 255), 1000, 0.0, 0.9, 1.0);
+  auto material_refractedGlass =
+      make_shared<Material>(Color(255, 255, 255), 1000, 0.0, 1.1, 1.5);
+  auto material_mirror =
+      make_shared<Material>(Color(255, 255, 255), 1000, 0.0, 0.9, 1);
 
   // Origin
   world.add_hittable(make_shared<Sphere<double>>(
       Point3<double>(0.0, 0.0, 0.0), 0.01,
       make_shared<Material>(Color(0, 0, 0), 0, 0.0, 0.0, 1.0)));
 
+  Vec3<double> well = Point3<double>(0.0, 0.0, 5);
+
   // Objects
-  world.add_hittable(make_shared<Sphere<double>>(Point3<double>(0.0, 0.0, 3.0),
-                                                 1.0, material_red));
-  world.add_hittable(make_shared<Sphere<double>>(Point3<double>(2.0, 1.0, 4.0),
-                                                 1.0, material_blue));
-  world.add_hittable(make_shared<Sphere<double>>(Point3<double>(-2.0, 1.0, 4.0),
-                                                 1.0, material_green));
+  world.add_hittable(make_shared<Sphere<double>>(
+      pull(Point3<double>(0.0, 0.0, 3.0), well, 0.1), 1.0, material_red));
+  world.add_hittable(make_shared<Sphere<double>>(
+      pull(Point3<double>(2.3, 1.0, 4.0), well, 0.2), 1.0, material_blue));
+  world.add_hittable(make_shared<Sphere<double>>(
+      pull(Point3<double>(-2.5, 1.0, 4.5), well, 0.2), 1.0, material_green));
   world.add_hittable(make_shared<Sphere<double>>(
       Point3<double>(0.0, -5000.0, 0.0), 5000.0, material_ground));
 
-  world.add_hittable(make_shared<Sphere<double>>(Point3<double>(3.0, 3.0, 10.0),
-                                                 3.0, material_tintedGlass));
+  // world.add_hittable(make_shared<Sphere<double>>(Point3<double>(7.0, 2.0, 11.0),
+  //                                                2.0,
+  //                                                material_refractedGlass));
+  world.add_hittable(make_shared<Sphere<double>>(Point3<double>(-0.3, 1.0, 4.5),
+                                                 0.6, material_mirror));
 
   // Lights
   world.add_light(
@@ -124,22 +136,73 @@ void populate_scene(Scene<double> &world) {
   world.add_light(
       make_shared<Light<double>>(kPoint, Point3<double>(-4.0, 8.0, -1.0), 0.6));
   world.add_light(make_shared<Light<double>>(
-      kDirectonal, Point3<double>(40.0, 200.0, 15.0), 0.4));
+      kDirectonal, Point3<double>(40.0, 200.0, -15.0), 0.4));
 }
 
 // Raytracing
 void raytracer(Canvas &canvas) {
 
   // Camera position for the ray origin.
-  double zoom = 1.5;
-  Camera cam(Point3<double>(-2.5 * zoom, 2.0 * zoom, -1.3 * zoom), 27.5, 10, 0);
+  double zoom = 1;
+  Camera cam(Point3<double>(-1.0 * zoom, 1.6 * zoom, 3.0 * zoom), 25, 20, 0);
 
-  // World
+  // World init
   Scene<double> world;
   populate_scene(world);
 
-  // Renderer
+  std::vector<int> iter_aa(N_ANTIALIASING);
+  for (uint32_t i = 0; i < N_ANTIALIASING; i++)
+    iter_aa[i] = i;
+
+  // Logging
   std::clog << "\r Start Raytracer.                 \n";
+  ProgressBar bar(SCREEN_WIDTH * SCREEN_HEIGHT);
+
+  // Renderer
+  size_t step = 0;
+
+#if MultiThreading
+
+  for (int x : std::ranges::iota_view(0, SCREEN_WIDTH)) {
+    for (int y : std::ranges::iota_view(0, SCREEN_HEIGHT)) {
+      Vec3<double> pixel_color(0.0, 0.0, 0.0);
+
+      // Supersampling
+      if (N_ANTIALIASING > 0) {
+        std::for_each(
+            std::execution::par_unseq, iter_aa.begin(), iter_aa.end(),
+            [&](uint8_t i) {
+              std::for_each(
+                  std::execution::par_unseq, iter_aa.begin(), iter_aa.end(),
+                  [&, i](uint32_t j) {
+                    // Grid-based jitter within pixel in range [-1,1]
+                    double offset_x = ((i + 0.5) / N_ANTIALIASING - 0.5) * 2;
+                    double offset_y = ((j + 0.5) / N_ANTIALIASING - 0.5) * 2;
+
+                    // Create supersampled ray for each pixel on the screen
+                    Ray<double> r =
+                        cam.create_pixelRay(x, y, offset_x, offset_y);
+                    // Compute the color of the pixel by raytracing the scene
+                    pixel_color += trace(r, world, cam.position(), 1.0);
+                  });
+            });
+        pixel_color /= N_ANTIALIASING * N_ANTIALIASING;
+      } else {
+        Ray<double> ray = cam.create_pixelRay(x, y, 0.0, 0.0);
+        // Compute the color of the pixel by raytracing the scene
+        pixel_color += trace(ray, world, cam.position(), 1.0);
+      }
+
+      // Compute the color of the pixel by raytracing the scene
+      canvas.set_pixel(x, y, pixel_color);
+      bar.update(++step);
+    }
+  }
+  bar.done();
+  std::clog << "\rDone.                 \n";
+  return;
+#endif
+
   for (int x : std::ranges::iota_view(0, SCREEN_WIDTH)) {
     for (int y : std::ranges::iota_view(0, SCREEN_HEIGHT)) {
       Vec3<double> pixel_color(0.0, 0.0, 0.0);
@@ -168,7 +231,9 @@ void raytracer(Canvas &canvas) {
 
       // Compute the color of the pixel by raytracing the scene
       canvas.set_pixel(x, y, pixel_color);
+      bar.update(++step);
     }
   }
+  bar.done();
   std::clog << "\rDone.                 \n";
 }

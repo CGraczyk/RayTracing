@@ -29,10 +29,12 @@ template <typename T> struct HitRecord {
   }
 
   void set_transparency(double transparency) {
-    m_material->m_transparency = transparency;
+    if (!(m_material->m_transparency > 1.0))
+      m_material->m_transparency = transparency;
   }
   void set_reflectiveness(double reflectiveness) {
-    m_material->m_reflectiveness = reflectiveness;
+    if (!(m_material->m_transparency > 1.0))
+      m_material->m_reflectiveness = reflectiveness;
   }
 };
 

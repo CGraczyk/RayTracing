@@ -7,7 +7,7 @@ public:
   Canvas(int width, int height)
       : width_(width), height_(height), pixels_(width * height) {
     for (int i = 0; i < width * height; ++i) {
-      pixels_[i] = Color(255, 255, 255); // Initialize all pixels to black
+      pixels_[i] = Color(0, 0, 0); // Initialize all pixels to black
     }
   }
 
@@ -31,10 +31,11 @@ public:
   // corner´moving right and down.
   void render() const {
     std::cout << "P3\n" << width_ << ' ' << height_ << "\n255\n";
+    std::clog << "\r Start Drawing.                 \n";
+    ProgressBar bar(width_ * height_);
+    size_t step = 0;
 
     for (int j = 0; j < height_; j++) {
-      std::clog << "\rScanlines remaining: " << (height_ - j) << ' '
-                << std::flush;
       for (int i = 0; i < width_; i++) {
         const Color &pixel_color = pixels_[j * width_ + i];
 
@@ -44,9 +45,11 @@ public:
         int b = std::clamp(pixel_color.z(), 0, 255);
 
         std::cout << r << ' ' << g << ' ' << b << '\n';
+        bar.update(++step);
       }
     }
 
+    bar.done();
     std::clog << "\rDone.                 \n";
   }
 
