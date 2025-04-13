@@ -2,18 +2,18 @@
 
 #include "config.hpp"
 
-enum light_type {
+enum lightType {
   kAmbient = 0,
   kPoint = 1,
   kDirectonal = 2,
 };
 
-template <typename T> class light {
+template <typename T> class Light {
 public:
-  enum light_type type;
-  point3<T> position;
-  T intensity;
+  enum lightType m_type;
+  Point3<T> m_position;
+  T m_intensity;
 
-  light(enum light_type type_, const point3<T> &position_, T intensity_)
-      : type(type_), position(position_), intensity(intensity_) {}
+  Light(enum lightType type, const Point3<T> &position, T intensity)
+      : m_type(type), m_position(position), m_intensity(intensity) {}
 };
