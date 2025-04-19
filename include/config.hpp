@@ -25,16 +25,16 @@ using std::make_shared;
 using std::shared_ptr;
 
 // Constants
-constexpr int SCREEN_WIDTH = 4000;
-constexpr int SCREEN_HEIGHT = 4000;
+constexpr int SCREEN_WIDTH = 2000;
+constexpr int SCREEN_HEIGHT = 2000;
 constexpr float ASPECT_RATIO = static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT;
 constexpr float VIEWPORT_WIDTH = 1.0;
 constexpr float VIEWPORT_HEIGHT = VIEWPORT_WIDTH / ASPECT_RATIO;
 constexpr float FOCAL_LENGTH = 1.0;
 
 // Tracer Options
-constexpr int N_REFLECTIONS = 4;  // surface bounces per Ray
-constexpr int N_ANTIALIASING = 6; // squared number of rays per pixel
+constexpr int N_REFLECTIONS = 50;  // surface bounces per Ray
+constexpr int N_ANTIALIASING = 2; // squared number of rays per pixel
 
 // Utility
 const auto pi = std::numbers::pi;
