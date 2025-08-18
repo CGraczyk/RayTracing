@@ -8,7 +8,7 @@ double normalizedToWavelength(double value) {
 }
 
 // CIE 1931 XYZ Approximation (Wyman et al., 2013)
-vec3<double> cie1931WavelengthToXYZ(double wavelength) {
+Vec3<double> cie1931WavelengthToXYZ(double wavelength) {
   double t1, t2, t3;
   double x, y, z;
 
@@ -36,7 +36,7 @@ vec3<double> cie1931WavelengthToXYZ(double wavelength) {
 }
 
 // Convert XYZ to linear RGB
-vec3<double> xyzToLinearRGB(const vec3<double> &xyz) {
+Vec3<double> xyzToLinearRGB(const Vec3<double> &xyz) {
   return {3.2406255 * xyz.x() + -1.537208 * xyz.y() + -0.4986286 * xyz.z(),
           -0.9689307 * xyz.x() + 1.8757561 * xyz.y() + 0.0415175 * xyz.z(),
           0.0557101 * xyz.x() + -0.2040211 * xyz.y() + 1.0569959 * xyz.z()};
@@ -49,16 +49,10 @@ double gammaCorrect(double c) {
 }
 
 // Convert normalized value [0,1] to RGB
-color spectralToRGB(double normalizedValue) {
+Vec3<double> spectralToRGB(double normalizedValue) {
   double wavelength = normalizedToWavelength(normalizedValue);
-  vec3<double> xyz = cie1931WavelengthToXYZ(wavelength);
-  vec3<double> rgb = xyzToLinearRGB(xyz);
-
-  color v = {static_cast<int>(gammaCorrect(rgb.x()) * 255.999),
-             static_cast<int>(gammaCorrect(rgb.y()) * 255.999),
-             static_cast<int>(gammaCorrect(rgb.z()) * 255.999)};
-
-  return v;
+  Vec3<double> xyz = cie1931WavelengthToXYZ(wavelength);
+  return xyzToLinearRGB(xyz);
 }
 
 void spectrum(Canvas &canvas) {
@@ -70,11 +64,11 @@ void spectrum(Canvas &canvas) {
     float normalizedValue = static_cast<float>(col) / (width - 1);
 
     // Convert normalized value to RGB color
-    color v = spectralToRGB(normalizedValue);
+    Vec3<double> rgb = spectralToRGB(normalizedValue);
 
     // Fill the entire column with the color
     for (int row = 0; row < height; ++row) {
-      canvas.set_pixel(col, row, v);
+      canvas.set_pixel(col, row, rgb);
     }
   }
 }
